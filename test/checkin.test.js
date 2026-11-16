@@ -22,7 +22,7 @@ const run = (scenario) => {
   `
   const result = spawnSync(process.execPath, ['--input-type=module', '-e', script], {
     cwd: new URL('..', import.meta.url), encoding: 'utf8',
-    env: { PATH: process.env.PATH, GLADOS: 'gld:sess=test; gld:sess.sig=test', NOTIFY: 'console:log', AUTO_EXCHANGE: 'false' },
+    env: { PATH: process.env.PATH, GLADOS: 'gld:sess=test; gld:sess.sig=test', NOTIFY: 'console:log', AUTO_EXCHANGE: 'false', GLADOS_CHECKIN_MODE: 'http' },
   })
   return { status: result.status, output: result.stdout + result.stderr }
 }
