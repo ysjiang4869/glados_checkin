@@ -202,6 +202,8 @@ const CAPTCHA_DOMAINS = [
 
 // 验证 token 的请求字段名：出现即说明该页面向后端提交了人机验证结果
 const CAPTCHA_FIELDS = [
+  'turnstile',
+  'tsstate',
   'turnstiletoken',
   'captchatoken',
   'cf-turnstile-response',
@@ -365,7 +367,7 @@ const run = async () => {
 
   log('')
   if (!issues.length) {
-    log('结论: PASS —— 协议与基线一致')
+    log('结论: PASS —— 静态前端特征与基线一致（不代表服务端接受签到或人机验证已通过）')
     writeSummary([
       '## 协议检查：通过',
       '',
