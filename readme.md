@@ -178,11 +178,13 @@ GLaDOS 的登录态由多个 Cookie 共同组成，各字段作用如下：
 
 ## Cloudflare 验证失败（code=5 / reason=turnstile）
 
-此错误发生在提交签到时，challenge/nonce 获取成功并不代表签到成功。官网现在会从 challenge 响应读取 `turnstile` 配置，通过 Cloudflare 组件获取与 nonce 绑定的 token，再提交 `nonce`、`proof`、`tsState` 和 `turnstile` token。当前纯 HTTP 脚本仅支持无需 Turnstile 的签到，无法自行完成这项浏览器验证。
+官网现在从 challenge 响应读取 `turnstile` 配置，通过 Cloudflare 组件获取与 nonce 绑定的 token，再提交 `nonce`、`proof`、`tsState` 和 `turnstile` token。
 
-出现此错误时，请打开官网 `/console/checkin`，在浏览器中完成验证和当日签到。更新 Cookie、修改 UA 或重复运行 Actions 不能替代验证；浏览器手动签到也不保证后续 Actions 可以自动通过。不要把短期验证 token 存入 Secrets 当作长期配置。
+脚本检测到此配置后会打开 Chromium，使用该账号 Cookie 和 UA 访问官网，点击官网签到按钮，由官网自行执行验证并提交签到。工作流会安装所需浏览器；本地运行需先执行 `npm ci` 和 `npx playwright install --with-deps chromium`。浏览器更新的会话 Cookie 会继续用于积分和兑换请求，不会写入日志或文件。
 
-脚本检测到 challenge 要求 Turnstile 时会停止该账号的提交并提示人工处理；任何账号签到失败都会在发送通知后以非零状态退出，使 Actions 正确显示失败。协议 Guard 只比较静态前端特征，不能证明服务器验证已通过。
+这是正常浏览器流程，不保证 GitHub Runner 能自动通过 Cloudflare。若仍返回 `reason=turnstile` 或超时，需在官网完成当日签到；不要使用伪造 token 或将短期 token 存入 Secrets。本地可设置 `GLADOS_BROWSER_HEADLESS=false` 查看浏览器并手动完成验证（需要图形桌面）。设置 `GLADOS_CHECKIN_MODE=http` 可禁用浏览器回退，仅运行原有 HTTP 流程。
+
+任何账号签到失败都会在通知完成后以非零状态退出，使 Actions 正确显示失败。Guard 基线已包含当前的 `turnstile`、`tsState` 字段；静态协议检查通过不代表实际验证通过。
 
 ## 高级功能
 

@@ -217,7 +217,12 @@ const doCheckin = async (domain, headers) => {
   if (ch?.code !== 0 || !ch?.nonce) {
     throw new Error(`获取签到挑战失败: ${ch?.message || '未返回 nonce'} (code=${ch?.code})`)
   }
-  if (ch.turnstile) throw new Error(TURNSTILE_HELP)
+  if (ch.turnstile) {
+    if (process.env.GLADOS_CHECKIN_MODE === 'http') throw new Error(TURNSTILE_HELP)
+    console.log('  官网要求 Turnstile，转为 Chromium 执行官网签到流程')
+    const { browserCheckin } = await import('./browser-checkin.js')
+    return browserCheckin(domain, headers)
+  }
   const ttl = Number(ch.ttl) || 300000
   console.log(`  挑战已获取: nonce=${mask(String(ch.nonce), 6, 4)} ttl=${ttl}ms`)
 
