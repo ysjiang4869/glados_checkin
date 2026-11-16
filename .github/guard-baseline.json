@@ -8,7 +8,10 @@
     "domains": [
       "challenges.cloudflare.com"
     ],
-    "fields": []
+    "fields": [
+      "turnstile",
+      "tsstate"
+    ]
   },
   "checkedAt": "2026-11-07T02:12:28.376Z"
 }
