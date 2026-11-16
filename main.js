@@ -28,6 +28,11 @@ const EXCELLENT_DELAY_MAX_MS = 5000 // 前端评级 excellent 上限（<=5s）
 const checkinProof = (nonce) =>
   createHash('sha256').update(`${nonce}.${PROOF_SALT}`, 'utf8').digest('hex')
 
+const TURNSTILE_HELP =
+  'Cloudflare Turnstile 验证未完成（reason=turnstile）。本次未记录签到；' +
+  '请在官网 /console/checkin 使用浏览器完成验证和签到。' +
+  '当前纯 HTTP 脚本无法生成与本次 nonce 绑定的验证 token，修改 UA 或重复重试不能补齐验证。'
+
 // ========== 积分构成还原 ==========
 // 逆向自 renderPointsBreakdown()：
 //   最终积分 = Base + Plan 加成 + Streak 加成 + Cable 加成
@@ -212,6 +217,7 @@ const doCheckin = async (domain, headers) => {
   if (ch?.code !== 0 || !ch?.nonce) {
     throw new Error(`获取签到挑战失败: ${ch?.message || '未返回 nonce'} (code=${ch?.code})`)
   }
+  if (ch.turnstile) throw new Error(TURNSTILE_HELP)
   const ttl = Number(ch.ttl) || 300000
   console.log(`  挑战已获取: nonce=${mask(String(ch.nonce), 6, 4)} ttl=${ttl}ms`)
 
@@ -286,6 +292,10 @@ const glados = async () => {
       console.log(`[${tag}] 正在执行签到请求（含 challenge）...`)
       const action = await doCheckin(domain, headers)
       console.log(`[${tag}] 签到接口响应码: ${action?.code ?? '无'}`)
+
+      if (action?.reason === 'turnstile' && action?.code !== 0) {
+        throw new Error(TURNSTILE_HELP)
+      }
 
       const alreadyCheckedIn = action?.code === 1
       if (action?.code === 4 && action?.reason === 'device-mismatch') {
@@ -495,6 +505,7 @@ const glados = async () => {
   console.log('===================================')
   console.log('\n========== 签到任务处理完成 ==========')
   console.log(`📊 统计结果：成功 ${successCount} 个 | 失败 ${failCount} 个`)
+  if (failCount > 0) process.exitCode = 1
   if (criticalAnomalies > 0) {
     console.error(`🚨 共检出 ${criticalAnomalies} 项严重异常，本次任务标记为失败`)
     process.exitCode = 1
